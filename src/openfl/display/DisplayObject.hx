@@ -480,7 +480,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 							  and the shader specifies an image input that isn't
 							  provided.
 		@throws ArgumentError When `filters` includes a ShaderFilter, a
-							  ByteArray or Vector.<Number> instance as a shader
+							  ByteArray or Vector<Float> instance as a shader
 							  input, and the `width` and
 							  `height` properties aren't specified for
 							  the ShaderInput object, or the specified values
@@ -553,6 +553,13 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		@see [Masking display objects](https://books.openfl.org/openfl-developers-guide/display-programming/manipulating-display-objects/masking-display-objects.html)
 	**/
 	public var mask(get, set):DisplayObject;
+
+	// normal masks cannot be shared by multiple display objects, but swfs may
+	// define clipping layers, which involve depth checks where multiple display
+	// objects are allowed to be masked.
+	@:noCompletion private var clippingLayer(get, set):DisplayObject;
+
+	@:noCompletion private var __hasClippingLayer:Bool = false;
 
 	/**
 		Indicates the x coordinate of the mouse or user input device position, in
@@ -1458,6 +1465,18 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 			__cacheBitmapData.dispose();
 			__cacheBitmapData = null;
 		}
+
+		if (__cacheBitmapData2 != null)
+		{
+			__cacheBitmapData2.dispose();
+			__cacheBitmapData2 = null;
+		}
+
+		if (__cacheBitmapData3 != null)
+		{
+			__cacheBitmapData3.dispose();
+			__cacheBitmapData3 = null;
+		}
 	}
 
 	@:noCompletion private function __dispatch(event:Event):Bool
@@ -1958,6 +1977,39 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		}
 	}
 
+	@:noCompletion private function __setMask(value:DisplayObject):Void
+	{
+		if (value != __mask)
+		{
+			__setTransformDirty();
+			__setRenderDirty();
+		}
+
+		if (__mask != null)
+		{
+			__mask.__isMask = false;
+			__mask.__maskTarget = null;
+			__mask.__setTransformDirty();
+			__mask.__setRenderDirty();
+		}
+
+		if (value != null)
+		{
+			value.__isMask = true;
+			value.__maskTarget = this;
+			value.__setWorldTransformInvalid();
+		}
+
+		if (__cacheBitmap != null && __cacheBitmap.clippingLayer != value)
+		{
+			// the cache bitmap should not take ownership of the mask, so take
+			// advantage of the fact that clipping layers can be shared
+			__cacheBitmap.clippingLayer = value;
+		}
+
+		__mask = value;
+	}
+
 	// Get & Set Methods
 	@:keep @:noCompletion private function get_alpha():Float
 	{
@@ -2114,33 +2166,25 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 			value.__maskTarget.mask = null;
 		}
 
-		if (value != __mask)
-		{
-			__setTransformDirty();
-			__setRenderDirty();
-		}
+		__setMask(value);
 
-		if (__mask != null)
-		{
-			__mask.__isMask = false;
-			__mask.__maskTarget = null;
-			__mask.__setTransformDirty();
-			__mask.__setRenderDirty();
-		}
+		return __mask;
+	}
 
-		if (value != null)
+	@:noCompletion private function get_clippingLayer():DisplayObject
+	{
+		if (!__hasClippingLayer)
 		{
-			value.__isMask = true;
-			value.__maskTarget = this;
-			value.__setWorldTransformInvalid();
+			return null;
 		}
+		return __mask;
+	}
 
-		if (__cacheBitmap != null && __cacheBitmap.mask != value)
-		{
-			__cacheBitmap.mask = value;
-		}
-
-		return __mask = value;
+	@:noCompletion private function set_clippingLayer(value:DisplayObject):DisplayObject
+	{
+		__hasClippingLayer = value != null;
+		__setMask(value);
+		return __mask;
 	}
 
 	@:noCompletion private function get_mouseX():Float
