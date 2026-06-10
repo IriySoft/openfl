@@ -648,8 +648,7 @@ class SharedObject extends EventDispatcher
 		var illegalValues = [" ", "~", "%", "&", "\\", ";", ":", "\"", "'", ",", "<", ">", "?", "#"];
 		var allowed = true;
 
-		if (name == null || name == "")
-		{
+		if (name == null || name == "")	{
 			allowed = false;
 		}
 		else
@@ -741,7 +740,9 @@ class SharedObject extends EventDispatcher
 					unserializer.setResolver(cast {resolveEnum: Type.resolveEnum, resolveClass: __resolveClass});
 					sharedObject.data = unserializer.unserialize();
 				}
-				catch (e:Dynamic) {}
+				catch (e: Dynamic) {
+					sharedObject.data = encodedData;
+				}
 			}
 
 			__sharedObjects.set(id, sharedObject);
