@@ -2570,6 +2570,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 	@:noCompletion private function __onLimeWindowClose(window:Window):Void
 	{
+		#if debug 
+		trace("OpenFL window close");
+		#end
+
 		if (this.window == window)
 		{
 			this.window = null;
@@ -2642,6 +2646,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 	@:noCompletion private function __onLimeWindowExpose(window:Window):Void
 	{
+		#if debug 
+		trace("OpenFL window expose");
+		#end
+
 		if (this.window == null || this.window != window) return;
 
 		__renderDirty = true;
@@ -2709,6 +2717,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 	@:noCompletion private function __onLimeWindowFullscreen(window:Window):Void
 	{
+		#if debug 
+		trace("OpenFL window fullscreen");
+		#end
+
 		if (this.window == null || this.window != window) return;
 
 		__resize();
@@ -2745,6 +2757,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 	@:noCompletion private function __onLimeWindowMinimize(window:Window):Void
 	{
+		#if debug 
+		trace("OpenFL window minimize");
+		#end
+
 		if (this.window == null || this.window != window) return;
 
 		// __primaryTouch = null;
@@ -2758,6 +2774,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 	@:noCompletion private function __onLimeWindowResize(window:Window, width:Int, height:Int):Void
 	{
+		#if debug 
+		trace("OpenFL window resize");
+		#end
+
 		if (this.window == null || this.window != window) return;
 
 		__resize();
@@ -2781,6 +2801,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 	@:noCompletion private function __onLimeWindowRestore(window:Window):Void
 	{
+		#if debug 
+		trace("OpenFL window restore");
+		#end
+
 		if (this.window == null || this.window != window) return;
 
 		if (__wasFullscreen && !window.fullscreen)
@@ -3598,9 +3622,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 	@:noCompletion private function __resize():Void
 	{
 
+		var scale: Float = #if openfl_disable_hdpi 1 #else window.scale #end;
 		if (__renderer != null)
 		{
-			__renderer.__pixelRatio = #if openfl_disable_hdpi 1 #else window.scale #end;
+			__renderer.__pixelRatio = scale;
 		}
 
 		var cacheWidth = stageWidth;
@@ -3608,6 +3633,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 		var windowWidth = Math.ceil(window.width * window.scale);
 		var windowHeight = Math.ceil(window.height * window.scale);
+
+		#if debug 
+		trace("OpenFL resize from " + stageWidth + " x " + stageHeight + " to " + windowWidth+" x " + windowHeight + ", scale: " + scale);
+		#end
 
 		__displayMatrix.identity();
 
